@@ -42,7 +42,9 @@ void get_input(unsigned char y, char* buffer, unsigned char max_len, unsigned ch
     char ch;
     unsigned char i = 0;
     
+    cursor(1);
     gotoxy(INPUT_FIELD_X, y);
+
     while (i < max_len) {
         ch = cgetc();
         if (ch == CH_ENTER) {
@@ -59,8 +61,8 @@ void get_input(unsigned char y, char* buffer, unsigned char max_len, unsigned ch
         }
     }
     buffer[i] = '\0';
+    cursor(0);
 }
-
 
 void handle_login(char* user_number_buffer, char* password_buffer, unsigned char max_len) {
     do {
@@ -76,10 +78,8 @@ void handle_login(char* user_number_buffer, char* password_buffer, unsigned char
         gotoxy(PASSWORD_PROMPT_X, PASSWORD_PROMPT_Y);
         cprintf("Password:    ");
 
-        // Get User Number
         get_input(USER_NUM_PROMPT_Y, user_number_buffer, max_len, 0);
 
-        // Get Password
         get_input(PASSWORD_PROMPT_Y, password_buffer, max_len, 1);
 
     } while (strlen(user_number_buffer) == 0 || strlen(password_buffer) == 0);

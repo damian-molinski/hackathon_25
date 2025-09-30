@@ -2,6 +2,7 @@
 #include <conio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <peekpoke.h>
 
 #include "animation.h"
 #include "balance_screen.h"
@@ -78,6 +79,7 @@ int main(void) {
     unsigned char k;
     int current_selection = 0;
     const int num_menu_options = 3;
+	unsigned char keypress;
 
 program_start:
     i = 0;
@@ -117,6 +119,7 @@ program_start:
     gotoxy(MENU_TITLE_X, MENU_TITLE_Y);
     cprintf(MENU_TITLE_TEXT);
 
+    POKE(764, 255);
     while (1) {
         bgcolor(COLOR_BLACK); textcolor(COLOR_WHITE);
         gotoxy(MENU_OPTION1_X, MENU_OPTION1_Y);
@@ -126,17 +129,24 @@ program_start:
         gotoxy(MENU_OPTION3_X, MENU_OPTION3_Y);
         if (current_selection == 2) cprintf("> Exit                "); else cprintf("  Exit                ");
         
-        ch = cgetc();
-        switch (ch) {
-            case CH_CURS_UP:
+        keypress = PEEK(764);
+        //ch = cgetc();
+        switch (keypress) {
+            case 255:
+                // Do background work
+                break;
+            case /*CH_CURS_UP*/142:
+                POKE(764, 255);
                 current_selection--;
                 if (current_selection < 0) current_selection = num_menu_options - 1;
                 break;
-            case CH_CURS_DOWN:
+            case /*CH_CURS_DOWN*/143:
+                POKE(764, 255);
                 current_selection++;
                 if (current_selection >= num_menu_options) current_selection = 0;
                 break;
-            case CH_ENTER:
+            case /*CH_ENTER*/12:
+                POKE(764, 255);
                 if (current_selection == 0) {
                     show_balance_screen();
                     
@@ -170,6 +180,7 @@ program_start:
                 }
                 break;
         }
+        POKE(764, 255);
     } 
     return EXIT_SUCCESS;
 }

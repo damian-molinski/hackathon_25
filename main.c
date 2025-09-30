@@ -11,25 +11,31 @@
 #define SCREEN_HEIGHT 24
 
 #define MAX_PASSWORD_LEN 15
+#define MAX_USER_NUMBER_LEN 15
 
 #define HORIZONTAL_BOX_MARGIN 2
 
 #define MENU_BOX_X HORIZONTAL_BOX_MARGIN
 #define MENU_BOX_WIDTH (SCREEN_WIDTH - 2 * HORIZONTAL_BOX_MARGIN)
-#define MENU_BOX_Y 5
-#define MENU_BOX_HEIGHT 10
+#define MENU_BOX_Y 4
+#define MENU_BOX_HEIGHT 14
+
+#define USER_NUMBER_DISPLAY_X (MENU_BOX_X + 2)
+#define USER_NUMBER_DISPLAY_Y (MENU_BOX_Y + 1)
+#define SEPARATOR_Y (MENU_BOX_Y + 2)
+
 #define MENU_TITLE_TEXT "MAIN MENU"
 #define MENU_TITLE_TEXT_LEN 9
 #define MENU_TITLE_X (MENU_BOX_X + (MENU_BOX_WIDTH - MENU_TITLE_TEXT_LEN) / 2)
-#define MENU_TITLE_Y (MENU_BOX_Y + 1)
+#define MENU_TITLE_Y (MENU_BOX_Y + 4)
 
 #define MENU_OPTION_CONTENT_X_OFFSET 2
 #define MENU_OPTION1_X (MENU_BOX_X + MENU_OPTION_CONTENT_X_OFFSET)
-#define MENU_OPTION1_Y (MENU_BOX_Y + 3)
+#define MENU_OPTION1_Y (MENU_BOX_Y + 6)
 #define MENU_OPTION2_X (MENU_BOX_X + MENU_OPTION_CONTENT_X_OFFSET)
-#define MENU_OPTION2_Y (MENU_BOX_Y + 5)
+#define MENU_OPTION2_Y (MENU_BOX_Y + 8)
 #define MENU_OPTION3_X (MENU_BOX_X + MENU_OPTION_CONTENT_X_OFFSET)
-#define MENU_OPTION3_Y (MENU_BOX_Y + 7)
+#define MENU_OPTION3_Y (MENU_BOX_Y + 10)
 
 #define CONFIRM_BOX_WIDTH 26
 #define CONFIRM_BOX_HEIGHT 5
@@ -44,25 +50,32 @@
 #define MSG_X MSG_X_MARGIN
 #define MSG_Y 12
 
-// draw_box is now defined in login_screen.c
 extern void draw_box(unsigned char x, unsigned char y, unsigned char width, unsigned char height);
 
 int main(void) {
     char password[MAX_PASSWORD_LEN + 1];
+    char user_number[MAX_USER_NUMBER_LEN + 1];
     char ch;
+    unsigned char k;
     int current_selection = 0;
     const int num_menu_options = 3;
 
 program_start:
     current_selection = 0;
 
-    handle_login(password, MAX_PASSWORD_LEN);
+    handle_login(user_number, password, MAX_PASSWORD_LEN);
 
     play_animation();
 
     clrscr();
     draw_box(MENU_BOX_X, MENU_BOX_Y, MENU_BOX_WIDTH, MENU_BOX_HEIGHT);
     bgcolor(COLOR_BLACK); textcolor(COLOR_WHITE);
+    gotoxy(USER_NUMBER_DISPLAY_X, USER_NUMBER_DISPLAY_Y);
+    cprintf("User: %s", user_number);
+    textcolor(COLOR_BLUE);
+    gotoxy(MENU_BOX_X + 1, SEPARATOR_Y);
+    for(k = 0; k < MENU_BOX_WIDTH - 2; ++k) { cputc(CH_HLINE); }
+    textcolor(COLOR_WHITE);
     gotoxy(MENU_TITLE_X, MENU_TITLE_Y);
     cprintf(MENU_TITLE_TEXT);
 
@@ -92,6 +105,12 @@ program_start:
                     clrscr();
                     draw_box(MENU_BOX_X, MENU_BOX_Y, MENU_BOX_WIDTH, MENU_BOX_HEIGHT);
                     bgcolor(COLOR_BLACK); textcolor(COLOR_WHITE);
+                    gotoxy(USER_NUMBER_DISPLAY_X, USER_NUMBER_DISPLAY_Y);
+                    cprintf("User: %s", user_number);
+                    textcolor(COLOR_BLUE);
+                    gotoxy(MENU_BOX_X + 1, SEPARATOR_Y);
+                    for(k = 0; k < MENU_BOX_WIDTH - 2; ++k) { cputc(CH_HLINE); }
+                    textcolor(COLOR_WHITE);
                     gotoxy(MENU_TITLE_X, MENU_TITLE_Y);
                     cprintf(MENU_TITLE_TEXT);
                 } else if (current_selection == 1) {
@@ -113,6 +132,12 @@ program_start:
                         clrscr();
                         draw_box(MENU_BOX_X, MENU_BOX_Y, MENU_BOX_WIDTH, MENU_BOX_HEIGHT);
                         bgcolor(COLOR_BLACK); textcolor(COLOR_WHITE);
+                        gotoxy(USER_NUMBER_DISPLAY_X, USER_NUMBER_DISPLAY_Y);
+                        cprintf("User: %s", user_number);
+                        textcolor(COLOR_BLUE);
+                        gotoxy(MENU_BOX_X + 1, SEPARATOR_Y);
+                        for(k = 0; k < MENU_BOX_WIDTH - 2; ++k) { cputc(CH_HLINE); }
+                        textcolor(COLOR_WHITE);
                         gotoxy(MENU_TITLE_X, MENU_TITLE_Y);
                         cprintf(MENU_TITLE_TEXT);
                     }

@@ -11,12 +11,13 @@
 #define INPUT_BOX_X HORIZONTAL_BOX_MARGIN
 #define INPUT_BOX_WIDTH (SCREEN_WIDTH - 2 * HORIZONTAL_BOX_MARGIN)
 #define INPUT_BOX_Y 8
-#define INPUT_BOX_HEIGHT 6
-#define INPUT_PROMPT_X (INPUT_BOX_X + 4)
-#define INPUT_PROMPT_Y (INPUT_BOX_Y + 2)
-#define INPUT_FIELD_X (INPUT_PROMPT_X + 16)
+#define INPUT_BOX_HEIGHT 8
+#define USER_NUM_PROMPT_X (INPUT_BOX_X + 4)
+#define USER_NUM_PROMPT_Y (INPUT_BOX_Y + 2)
+#define PASSWORD_PROMPT_X (INPUT_BOX_X + 4)
+#define PASSWORD_PROMPT_Y (INPUT_BOX_Y + 4)
+#define INPUT_FIELD_X (USER_NUM_PROMPT_X + 13)
 
-// We need draw_box here, so it is copied from main.c
 void draw_box(unsigned char x, unsigned char y, unsigned char width, unsigned char height) {
     unsigned char i;
     bgcolor(COLOR_BLACK);
@@ -37,34 +38,49 @@ void draw_box(unsigned char x, unsigned char y, unsigned char width, unsigned ch
     textcolor(COLOR_WHITE);
 }
 
-void handle_login(char* password_buffer, unsigned char max_len) {
+void get_input(unsigned char y, char* buffer, unsigned char max_len, unsigned char is_password) {
     char ch;
     unsigned char i = 0;
-    unsigned char k;
-
-    clrscr();
-    draw_box(INPUT_BOX_X, INPUT_BOX_Y, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT);
-    bgcolor(COLOR_BLACK);
-    textcolor(COLOR_WHITE);
-    gotoxy(INPUT_PROMPT_X, INPUT_PROMPT_Y);
-    cprintf("Enter Password: ");
-
-    gotoxy(INPUT_FIELD_X, INPUT_PROMPT_Y);
-    for(k=0; k<max_len; ++k) {
-        cputc(' ');
-    }
-    gotoxy(INPUT_FIELD_X, INPUT_PROMPT_Y);
-
+    
+    gotoxy(INPUT_FIELD_X, y);
     while (i < max_len) {
         ch = cgetc();
-        if (ch == CH_ENTER) break;
+        if (ch == CH_ENTER) {
+            break;
+        }
         if ((ch == CH_DEL || ch == CH_RUBOUT || ch == CH_CURS_LEFT) && i > 0) {
             --i;
-            gotoxy(INPUT_FIELD_X + i, INPUT_PROMPT_Y); cputc(' ');
-            gotoxy(INPUT_FIELD_X + i, INPUT_PROMPT_Y);
+            gotoxy(INPUT_FIELD_X + i, y);
+            cputc(' ');
+            gotoxy(INPUT_FIELD_X + i, y);
         } else if (ch >= ' ' && ch <= '~') {
-            password_buffer[i++] = ch; cputc('*');
+            buffer[i++] = ch;
+            cputc(is_password ? '*' : ch);
         }
     }
-    password_buffer[i] = '\0';
+    buffer[i] = '\0';
+}
+
+
+void handle_login(char* user_number_buffer, char* password_buffer, unsigned char max_len) {
+    do {
+        clrscr();
+        draw_box(INPUT_BOX_X, INPUT_BOX_Y, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT);
+        
+        bgcolor(COLOR_BLACK);
+        textcolor(COLOR_WHITE);
+        
+        gotoxy(USER_NUM_PROMPT_X, USER_NUM_PROMPT_Y);
+        cprintf("User Number: ");
+        
+        gotoxy(PASSWORD_PROMPT_X, PASSWORD_PROMPT_Y);
+        cprintf("Password:    ");
+
+        // Get User Number
+        get_input(USER_NUM_PROMPT_Y, user_number_buffer, max_len, 0);
+
+        // Get Password
+        get_input(PASSWORD_PROMPT_Y, password_buffer, max_len, 1);
+
+    } while (strlen(user_number_buffer) == 0 || strlen(password_buffer) == 0);
 }

@@ -3,6 +3,6 @@
 
 #include <atari.h>
 
-void handle_login(char* password_buffer, unsigned char max_len);
+void handle_login(char* user_number_buffer, char* password_buffer, unsigned char max_len);
 
 #endif

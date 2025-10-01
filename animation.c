@@ -30,7 +30,7 @@ void play_animation(void) {
     gotoxy(PROGRESS_BAR_X_END, PROGRESS_BAR_Y);
     cputc(']');
 
-    for (i = 0; i < PROGRESS_BAR_WIDTH - 1; ++i) {
+    for (i = 0; i < PROGRESS_BAR_WIDTH; ++i) {
         gotoxy(SPINNER_X, SPINNER_Y);
         cputc(spinner[i % 4]);
 

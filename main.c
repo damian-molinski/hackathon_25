@@ -8,6 +8,7 @@
 #include "animation.h"
 #include "balance_screen.h"
 #include "login_screen.h"
+#include "transactions.h"
 
 #define SCREEN_WIDTH 40
 #define SCREEN_HEIGHT 24
@@ -52,107 +53,7 @@
 #define MSG_X MSG_X_MARGIN
 #define MSG_Y 12
 
-unsigned char *input_file = "H6:IN";
-unsigned char tx_buffer[256];
-unsigned int last_check_timestamp = 0;
-int balances[10][10];
-
-unsigned int current_timestamp()
-{
-    return (PEEK(18) * 65536 + PEEK(19) * 256 + PEEK(20)) / 60;
-}
-
-void read_incoming_transaction()
-{
-    unsigned int current_time = current_timestamp();
-    unsigned int diff = current_time - last_check_timestamp;
-    FILE *file;
-
-    if (diff > 5)
-    {
-        last_check_timestamp = current_time;
-        file = fopen(input_file, "r");
-        if (file == NULL)
-        {
-            tx_buffer[0] = 0;
-            return;
-        }
-
-        if (fgets(tx_buffer, 256, file) == NULL)
-        {
-            tx_buffer[0] = 0;
-            fclose(file);
-            return;
-        }
-
-        fclose(file);
-
-        // Remove the file
-        if (remove(input_file) != 0)
-        {
-            tx_buffer[0] = 0;
-            printf("TxPool broken\n");
-        }
-    }
-    else
-    {
-        tx_buffer[0] = 0;
-    }
-}
-
 extern void draw_box(unsigned char x, unsigned char y, unsigned char width, unsigned char height);
-
-int next_free_balance_slot(int customer_id)
-{
-    int tx_idx;
-    for (tx_idx = 0; tx_idx < 10; ++tx_idx)
-    {
-        if (balances[customer_id][tx_idx] == 0)
-        {
-            break;
-        }
-    }
-    return tx_idx;
-}
-
-void deposit()
-{
-    char *last_colon = strrchr(tx_buffer, ':');
-    int customer_id = tx_buffer[2] - 48;
-    int amount = atoi(last_colon + 1);
-    int tx_idx = next_free_balance_slot(customer_id);
-    printf("Depositing %i to %i on slot %i\n", amount, customer_id, tx_idx);
-    balances[customer_id][tx_idx] = amount;
-}
-
-void withdraw()
-{
-    char *last_colon = strrchr(tx_buffer, ':');
-    int customer_id = tx_buffer[2] - 48;
-    int amount = atoi(last_colon + 1);
-    int tx_idx = next_free_balance_slot(customer_id);
-    printf("Withdrawing %i from %i on slot %i\n", amount, customer_id, tx_idx);
-    balances[customer_id][tx_idx] = -amount;
-}
-
-void query()
-{
-    char *last_colon = strrchr(tx_buffer, ':');
-    int customer_id = tx_buffer[2] - 48;
-    int tx_idx = next_free_balance_slot(customer_id);
-    int balance = 0;
-    int i;
-    if (tx_idx != 0)
-    {
-        for (i = 0; i < tx_idx; ++i)
-        {
-            printf("  Tx1: %i (%i)\n", i, balances[customer_id][i]);
-            balance += balances[customer_id][i];
-        }
-    }
-
-    printf("  TOTAL: %i\n", balance);
-}
 
 int main(void)
 {
@@ -163,14 +64,18 @@ int main(void)
     int current_selection = 0;
     const int num_menu_options = 3;
     unsigned char keypress;
+    int customer_id;
 
 program_start:
     current_selection = 0;
+    init_transactions();
 
     handle_login(user_number, password, MAX_PASSWORD_LEN);
+    customer_id = atoi(user_number);
 
     play_animation();
 
+    // Draw the main menu frame
     clrscr();
     draw_box(MENU_BOX_X, MENU_BOX_Y, MENU_BOX_WIDTH, MENU_BOX_HEIGHT);
     bgcolor(COLOR_BLACK);
@@ -179,10 +84,7 @@ program_start:
     cprintf("User: %s", user_number);
     textcolor(COLOR_BLUE);
     gotoxy(MENU_BOX_X + 1, SEPARATOR_Y);
-    for (k = 0; k < MENU_BOX_WIDTH - 2; ++k)
-    {
-        cputc(CH_HLINE);
-    }
+    for (k = 0; k < MENU_BOX_WIDTH - 2; ++k) { cputc(CH_HLINE); }
     textcolor(COLOR_WHITE);
     gotoxy(MENU_TITLE_X, MENU_TITLE_Y);
     cprintf(MENU_TITLE_TEXT);
@@ -193,111 +95,36 @@ program_start:
         bgcolor(COLOR_BLACK);
         textcolor(COLOR_WHITE);
         gotoxy(MENU_OPTION1_X, MENU_OPTION1_Y);
-        if (current_selection == 0)
-            cprintf("> Balance             ");
-        else
-            cprintf("  Balance             ");
+        if (current_selection == 0) cprintf("> Balance             "); else cprintf("  Balance             ");
         gotoxy(MENU_OPTION2_X, MENU_OPTION2_Y);
-        if (current_selection == 1)
-            cprintf("> Logout              ");
-        else
-            cprintf("  Logout              ");
+        if (current_selection == 1) cprintf("> Logout              "); else cprintf("  Logout              ");
         gotoxy(MENU_OPTION3_X, MENU_OPTION3_Y);
-        if (current_selection == 2)
-            cprintf("> Exit                ");
-        else
-            cprintf("  Exit                ");
+        if (current_selection == 2) cprintf("> Exit                "); else cprintf("  Exit                ");
 
         keypress = PEEK(764);
-        // ch = cgetc();
         switch (keypress)
         {
-        case 255:
-            // Do background work
-            read_incoming_transaction();
-            if (tx_buffer[0] == 0)
-            {
-                gotoxy(1, 19);
-                printf("No transaction");
-            }
-            else
-            {
-                gotoxy(1, 19);
-                printf("Incoming Tx: %s", tx_buffer);
-                if (tx_buffer[0] == 'D')
+            case 255:
+                // Process transactions in the background
+                process_incoming_transactions();
+                break;
+            case /*CH_CURS_UP*/ 142:
+                POKE(764, 255);
+                current_selection--;
+                if (current_selection < 0) current_selection = num_menu_options - 1;
+                break;
+            case /*CH_CURS_DOWN*/ 143:
+                POKE(764, 255);
+                current_selection++;
+                if (current_selection >= num_menu_options) current_selection = 0;
+                break;
+            case /*CH_ENTER*/ 12:
+                POKE(764, 255);
+                if (current_selection == 0)
                 {
-                    deposit();
-                }
-                else if (tx_buffer[0] == 'W')
-                {
-                    withdraw();
-                }
-                else if (tx_buffer[0] == 'Q')
-                {
-                    query();
-                }
-            }
+                    show_balance_screen(customer_id);
 
-            break;
-        case /*CH_CURS_UP*/ 142:
-            POKE(764, 255);
-            current_selection--;
-            if (current_selection < 0)
-                current_selection = num_menu_options - 1;
-            break;
-        case /*CH_CURS_DOWN*/ 143:
-            POKE(764, 255);
-            current_selection++;
-            if (current_selection >= num_menu_options)
-                current_selection = 0;
-            break;
-        case /*CH_ENTER*/ 12:
-            POKE(764, 255);
-            if (current_selection == 0)
-            {
-                show_balance_screen();
-
-                clrscr();
-                draw_box(MENU_BOX_X, MENU_BOX_Y, MENU_BOX_WIDTH, MENU_BOX_HEIGHT);
-                bgcolor(COLOR_BLACK);
-                textcolor(COLOR_WHITE);
-                gotoxy(USER_NUMBER_DISPLAY_X, USER_NUMBER_DISPLAY_Y);
-                cprintf("User: %s", user_number);
-                textcolor(COLOR_BLUE);
-                gotoxy(MENU_BOX_X + 1, SEPARATOR_Y);
-                for (k = 0; k < MENU_BOX_WIDTH - 2; ++k)
-                {
-                    cputc(CH_HLINE);
-                }
-                textcolor(COLOR_WHITE);
-                gotoxy(MENU_TITLE_X, MENU_TITLE_Y);
-                cprintf(MENU_TITLE_TEXT);
-            }
-            else if (current_selection == 1)
-            {
-                clrscr();
-                goto program_start;
-            }
-            else if (current_selection == 2)
-            {
-                clrscr();
-                draw_box(CONFIRM_BOX_X, CONFIRM_BOX_Y, CONFIRM_BOX_WIDTH, CONFIRM_BOX_HEIGHT);
-                bgcolor(COLOR_BLACK);
-                textcolor(COLOR_WHITE);
-                gotoxy(CONFIRM_MSG_X, CONFIRM_MSG_Y);
-                cprintf(CONFIRM_MSG_TEXT);
-                ch = cgetc();
-                if (ch == 'Y' || ch == 'y')
-                {
-                    clrscr();
-                    bgcolor(COLOR_BLACK);
-                    textcolor(COLOR_WHITE);
-                    gotoxy(MSG_X, MSG_Y);
-                    cprintf("Exiting program. Goodbye!");
-                    return EXIT_SUCCESS;
-                }
-                else
-                {
+                    // Redraw main menu after returning
                     clrscr();
                     draw_box(MENU_BOX_X, MENU_BOX_Y, MENU_BOX_WIDTH, MENU_BOX_HEIGHT);
                     bgcolor(COLOR_BLACK);
@@ -306,16 +133,52 @@ program_start:
                     cprintf("User: %s", user_number);
                     textcolor(COLOR_BLUE);
                     gotoxy(MENU_BOX_X + 1, SEPARATOR_Y);
-                    for (k = 0; k < MENU_BOX_WIDTH - 2; ++k)
-                    {
-                        cputc(CH_HLINE);
-                    }
+                    for (k = 0; k < MENU_BOX_WIDTH - 2; ++k) { cputc(CH_HLINE); }
                     textcolor(COLOR_WHITE);
                     gotoxy(MENU_TITLE_X, MENU_TITLE_Y);
                     cprintf(MENU_TITLE_TEXT);
                 }
-            }
-            break;
+                else if (current_selection == 1)
+                {
+                    clrscr();
+                    goto program_start;
+                }
+                else if (current_selection == 2)
+                {
+                    clrscr();
+                    draw_box(CONFIRM_BOX_X, CONFIRM_BOX_Y, CONFIRM_BOX_WIDTH, CONFIRM_BOX_HEIGHT);
+                    bgcolor(COLOR_BLACK);
+                    textcolor(COLOR_WHITE);
+                    gotoxy(CONFIRM_MSG_X, CONFIRM_MSG_Y);
+                    cprintf(CONFIRM_MSG_TEXT);
+                    ch = cgetc();
+                    if (ch == 'Y' || ch == 'y')
+                    {
+                        clrscr();
+                        bgcolor(COLOR_BLACK);
+                        textcolor(COLOR_WHITE);
+                        gotoxy(MSG_X, MSG_Y);
+                        cprintf("Exiting program. Goodbye!");
+                        return EXIT_SUCCESS;
+                    }
+                    else
+                    {
+                        // Redraw main menu
+                        clrscr();
+                        draw_box(MENU_BOX_X, MENU_BOX_Y, MENU_BOX_WIDTH, MENU_BOX_HEIGHT);
+                        bgcolor(COLOR_BLACK);
+                        textcolor(COLOR_WHITE);
+                        gotoxy(USER_NUMBER_DISPLAY_X, USER_NUMBER_DISPLAY_Y);
+                        cprintf("User: %s", user_number);
+                        textcolor(COLOR_BLUE);
+                        gotoxy(MENU_BOX_X + 1, SEPARATOR_Y);
+                        for (k = 0; k < MENU_BOX_WIDTH - 2; ++k) { cputc(CH_HLINE); }
+                        textcolor(COLOR_WHITE);
+                        gotoxy(MENU_TITLE_X, MENU_TITLE_Y);
+                        cprintf(MENU_TITLE_TEXT);
+                    }
+                }
+                break;
         }
         POKE(764, 255);
     }

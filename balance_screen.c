@@ -1,8 +1,11 @@
+#include <stdio.h>
 #include <atari.h>
 #include <conio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "balance_screen.h"
+#include "transactions.h"
 
 #define SCREEN_WIDTH 40
 #define SCREEN_HEIGHT 24
@@ -25,8 +28,14 @@
 #define EXIT_PROMPT_X HORIZONTAL_BOX_MARGIN
 #define EXIT_PROMPT_Y (SCREEN_HEIGHT - 3)
 
-void show_balance_screen(void) {
+void show_balance_screen(int customer_id)
+{
     unsigned char k;
+    int i;
+    long total_balance;
+    int transactions[10];
+    int num_transactions;
+
     clrscr();
     bgcolor(COLOR_BLACK);
     textcolor(COLOR_WHITE);
@@ -34,36 +43,56 @@ void show_balance_screen(void) {
     gotoxy(ACCOUNT_TITLE_X, ACCOUNT_TITLE_Y);
     cprintf(ACCOUNT_TITLE_TEXT);
 
+    // Get and display the total balance
+    total_balance = get_total_balance_for_customer(customer_id);
     textcolor(COLOR_GREEN);
     gotoxy(CURRENT_BALANCE_X, CURRENT_BALANCE_Y);
-    cprintf("Current Balance:  10000 CR");
+    cprintf("Current Balance: $%ld", total_balance);
 
     textcolor(COLOR_BLUE);
     gotoxy(HORIZONTAL_BOX_MARGIN, SEPARATOR_Y);
-    for (k = 0; k < (SCREEN_WIDTH - 2 * HORIZONTAL_BOX_MARGIN); ++k) {
+    for (k = 0; k < (SCREEN_WIDTH - 2 * HORIZONTAL_BOX_MARGIN); ++k)
+    {
         cputc(CH_HLINE);
     }
 
     textcolor(COLOR_WHITE);
-    gotoxy(ID_COL_X, TABLE_HEADER_Y); cprintf("ID");
-    gotoxy(TYPE_COL_X, TABLE_HEADER_Y); cprintf("TYPE");
-    gotoxy(AMOUNT_COL_X, TABLE_HEADER_Y); cprintf("AMOUNT");
+    gotoxy(ID_COL_X, TABLE_HEADER_Y);
+    cprintf("ID");
+    gotoxy(TYPE_COL_X, TABLE_HEADER_Y);
+    cprintf("TYPE");
+    gotoxy(AMOUNT_COL_X, TABLE_HEADER_Y);
+    cprintf("AMOUNT");
 
-    gotoxy(ID_COL_X, TABLE_ROW_START_Y); cprintf("001");
-    gotoxy(TYPE_COL_X, TABLE_ROW_START_Y); cprintf("Deposit");
-    gotoxy(AMOUNT_COL_X, TABLE_ROW_START_Y); cprintf(" +10000 CR");
+    // Get and display the list of transactions
+    num_transactions = get_transactions_for_customer(customer_id, transactions, 10);
+    for (i = 0; i < num_transactions; ++i)
+    {
+        int amount = transactions[i];
+        char transaction_type[11];
 
-    gotoxy(ID_COL_X, TABLE_ROW_START_Y + 1); cprintf("002");
-    gotoxy(TYPE_COL_X, TABLE_ROW_START_Y + 1); cprintf("Withdrawal");
-    gotoxy(AMOUNT_COL_X, TABLE_ROW_START_Y + 1); cprintf("   -500 CR");
+        if (amount >= 0) {
+            strcpy(transaction_type, "Deposit");
+        } else {
+            strcpy(transaction_type, "Withdrawal");
+        }
 
-    gotoxy(ID_COL_X, TABLE_ROW_START_Y + 2); cprintf("003");
-    gotoxy(TYPE_COL_X, TABLE_ROW_START_Y + 2); cprintf("Deposit");
-    gotoxy(AMOUNT_COL_X, TABLE_ROW_START_Y + 2); cprintf("  +2000 CR");
+        gotoxy(ID_COL_X, TABLE_ROW_START_Y + i);
+        cprintf("%03d", i + 1);
 
-    gotoxy(ID_COL_X, TABLE_ROW_START_Y + 3); cprintf("004");
-    gotoxy(TYPE_COL_X, TABLE_ROW_START_Y + 3); cprintf("Withdrawal");
-    gotoxy(AMOUNT_COL_X, TABLE_ROW_START_Y + 3); cprintf("  -1500 CR");
+        gotoxy(TYPE_COL_X, TABLE_ROW_START_Y + i);
+        cprintf("%s", transaction_type);
+
+        gotoxy(AMOUNT_COL_X, TABLE_ROW_START_Y + i);
+        if (amount >= 0)
+        {
+            cprintf("$+%d", amount);
+        }
+        else
+        {
+            cprintf("$%d", amount);
+        }
+    }
 
     textcolor(COLOR_GRAY2);
     gotoxy(EXIT_PROMPT_X, EXIT_PROMPT_Y);

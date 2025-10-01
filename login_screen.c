@@ -3,7 +3,6 @@
 #include <string.h>
 #include "login_screen.h"
 
-// Add definitions for the missing double-line characters
 #define CH_DBL_ULCORNER 201
 #define CH_DBL_URCORNER 185
 #define CH_DBL_LLCORNER 200

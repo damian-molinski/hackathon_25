@@ -3,6 +3,14 @@
 #include <string.h>
 #include "login_screen.h"
 
+// Add definitions for the missing double-line characters
+#define CH_DBL_ULCORNER 201
+#define CH_DBL_URCORNER 185
+#define CH_DBL_LLCORNER 200
+#define CH_DBL_LRCORNER 188
+#define CH_DBL_HLINE    205
+#define CH_DBL_VLINE    186
+
 #define SCREEN_WIDTH 40
 #define SCREEN_HEIGHT 24
 
@@ -18,22 +26,38 @@
 #define PASSWORD_PROMPT_Y (INPUT_BOX_Y + 4)
 #define INPUT_FIELD_X (USER_NUM_PROMPT_X + 13)
 
+#define SHADOW_OFFSET_X 2
+#define SHADOW_OFFSET_Y 1
+
 void draw_box(unsigned char x, unsigned char y, unsigned char width, unsigned char height) {
-    unsigned char i;
+    unsigned char i, j;
+
+    // 1. Draw the drop shadow first
+    bgcolor(COLOR_GRAY1);
+    for (i = 0; i < height; ++i) {
+        gotoxy(x + SHADOW_OFFSET_X, y + SHADOW_OFFSET_Y + i);
+        for (j = 0; j < width; ++j) {
+            cputc(' ');
+        }
+    }
+
+    // 2. Draw the main box on top with double lines
     bgcolor(COLOR_BLACK);
     textcolor(COLOR_BLUE);
     for (i = 0; i < width; ++i) {
-        gotoxy(x + i, y); cputc(CH_HLINE);
-        gotoxy(x + i, y + height - 1); cputc(CH_HLINE);
+        gotoxy(x + i, y); cputc(CH_DBL_HLINE);
+        gotoxy(x + i, y + height - 1); cputc(CH_DBL_HLINE);
     }
     for (i = 1; i < height - 1; ++i) {
-        gotoxy(x, y + i); cputc(CH_VLINE);
-        gotoxy(x + width - 1, y + i); cputc(CH_VLINE);
+        gotoxy(x, y + i); cputc(CH_DBL_VLINE);
+        gotoxy(x + width - 1, y + i); cputc(CH_DBL_VLINE);
     }
-    gotoxy(x, y); cputc(CH_ULCORNER);
-    gotoxy(x + width - 1, y); cputc(CH_URCORNER);
-    gotoxy(x, y + height - 1); cputc(CH_LLCORNER);
-    gotoxy(x + width - 1, y + height - 1); cputc(CH_LRCORNER);
+    gotoxy(x, y); cputc(CH_DBL_ULCORNER);
+    gotoxy(x + width - 1, y); cputc(CH_DBL_URCORNER);
+    gotoxy(x, y + height - 1); cputc(CH_DBL_LLCORNER);
+    gotoxy(x + width - 1, y + height - 1); cputc(CH_DBL_LRCORNER);
+    
+    // 3. Reset colors for content inside the box
     bgcolor(COLOR_BLACK);
     textcolor(COLOR_WHITE);
 }

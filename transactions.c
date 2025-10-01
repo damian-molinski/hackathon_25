@@ -1,3 +1,5 @@
+#include "atari_defs1.h"
+#include <conio.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -87,10 +89,45 @@ void init_transactions(void) {
     memset(balances, 0, sizeof(balances));
 }
 
+void cprintf_inverted1(const char *str) {
+    unsigned int i = 0;
+    for (; i < strlen(str); i++) {
+        char c = str[i];
+        if (c != '\n') {
+            c = c | 0x80; 
+        }
+
+        cputc(c);
+    }
+    
+    cputc('\n');
+}
+
+void synchro1(int rep)
+{
+    unsigned char vcount;
+    while (rep--)
+    {
+        for (;;)
+        {
+            vcount = PEEK(VCOUNT);
+            if (vcount == 0x90)
+            {
+                break;
+            }
+        }
+    }
+}
+
 void process_incoming_transactions(void) {
     read_incoming_transaction();
     if (tx_buffer[0] != 0)
     {
+        gotoxy(10, 19);
+        cprintf_inverted1(" New Tx received! ");
+        synchro1(50);
+        gotoxy(10, 19);
+        cprintf("                  ");
         if (tx_buffer[0] == 'D')
         {
             deposit();

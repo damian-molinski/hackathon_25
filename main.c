@@ -257,9 +257,10 @@ int main(void)
 
     logo_animation();
 
+    init_transactions();
+
 program_start:
     current_selection = 0;
-    init_transactions();
 
     handle_login(user_number, password, MAX_PASSWORD_LEN);
     customer_id = atoi(user_number);

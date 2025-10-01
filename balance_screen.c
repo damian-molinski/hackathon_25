@@ -47,7 +47,7 @@ void show_balance_screen(int customer_id)
     total_balance = get_total_balance_for_customer(customer_id);
     textcolor(COLOR_GREEN);
     gotoxy(CURRENT_BALANCE_X, CURRENT_BALANCE_Y);
-    cprintf("Current Balance: $%ld", total_balance);
+    cprintf("Current Balance: %ld", total_balance);
 
     textcolor(COLOR_BLUE);
     gotoxy(HORIZONTAL_BOX_MARGIN, SEPARATOR_Y);
@@ -62,7 +62,7 @@ void show_balance_screen(int customer_id)
     gotoxy(TYPE_COL_X, TABLE_HEADER_Y);
     cprintf("TYPE");
     gotoxy(AMOUNT_COL_X, TABLE_HEADER_Y);
-    cprintf("AMOUNT");
+    cprintf("AMOUNT ($)");
 
     // Get and display the list of transactions
     num_transactions = get_transactions_for_customer(customer_id, transactions, 10);
@@ -73,8 +73,10 @@ void show_balance_screen(int customer_id)
 
         if (amount >= 0) {
             strcpy(transaction_type, "Deposit");
+            textcolor(COLOR_GREEN);
         } else {
             strcpy(transaction_type, "Withdrawal");
+            textcolor(COLOR_RED);
         }
 
         gotoxy(ID_COL_X, TABLE_ROW_START_Y + i);
@@ -86,11 +88,11 @@ void show_balance_screen(int customer_id)
         gotoxy(AMOUNT_COL_X, TABLE_ROW_START_Y + i);
         if (amount >= 0)
         {
-            cprintf("$+%d", amount);
+            cprintf("+%d", amount);
         }
         else
         {
-            cprintf("$%d", amount);
+            cprintf("%d", amount);
         }
     }
 

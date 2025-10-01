@@ -105,7 +105,6 @@ program_start:
         switch (keypress)
         {
             case 255:
-                // Process transactions in the background
                 process_incoming_transactions();
                 break;
             case /*CH_CURS_UP*/ 142:

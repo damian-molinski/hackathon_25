@@ -44,17 +44,17 @@ void draw_box(unsigned char x, unsigned char y, unsigned char width, unsigned ch
     bgcolor(COLOR_BLACK);
     textcolor(COLOR_BLUE);
     for (i = 0; i < width; ++i) {
-        gotoxy(x + i, y); cputc(CH_DBL_HLINE);
-        gotoxy(x + i, y + height - 1); cputc(CH_DBL_HLINE);
+        gotoxy(x + i, y); cputc(0x12);
+        gotoxy(x + i, y + height - 1); cputc(0x12);
     }
     for (i = 1; i < height - 1; ++i) {
-        gotoxy(x, y + i); cputc(CH_DBL_VLINE);
-        gotoxy(x + width - 1, y + i); cputc(CH_DBL_VLINE);
+        gotoxy(x, y + i); cputc('|');
+        gotoxy(x + width - 1, y + i); cputc('|');
     }
-    gotoxy(x, y); cputc(CH_DBL_ULCORNER);
-    gotoxy(x + width - 1, y); cputc(CH_DBL_URCORNER);
-    gotoxy(x, y + height - 1); cputc(CH_DBL_LLCORNER);
-    gotoxy(x + width - 1, y + height - 1); cputc(CH_DBL_LRCORNER);
+    gotoxy(x, y); cputc(0x11);
+    gotoxy(x + width - 1, y); cputc(0x05);
+    gotoxy(x, y + height - 1); cputc(0x1a);
+    gotoxy(x + width - 1, y + height - 1); cputc(0x03);
     
     // 3. Reset colors for content inside the box
     bgcolor(COLOR_BLACK);

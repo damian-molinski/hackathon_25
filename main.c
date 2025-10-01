@@ -1,3 +1,5 @@
+#include "atari_defs1.h"
+#include <stdio.h>
 #include <atari.h>
 #include <conio.h>
 #include <stdlib.h>
@@ -7,6 +9,13 @@
 #include "animation.h"
 #include "balance_screen.h"
 #include "login_screen.h"
+
+#define pmg_memory 0x8000
+#define pmg_memory_ptr ((unsigned char *)(pmg_memory))
+#define pmg_memory_P0 ((unsigned char *)(pmg_memory + 0x200))
+#define pmg_memory_P1 ((unsigned char *)(pmg_memory + 0x280))
+#define pmg_memory_P2 ((unsigned char *)(pmg_memory + 0x300))
+#define pmg_memory_P3 ((unsigned char *)(pmg_memory + 0x380))
 
 #define SCREEN_WIDTH 40
 #define SCREEN_HEIGHT 24
@@ -51,6 +60,106 @@
 #define MSG_X MSG_X_MARGIN
 #define MSG_Y 12
 
+unsigned char *input_file = "H6:IN";
+unsigned char tx_buffer[256];
+unsigned int last_check_timestamp = 0;
+int balances[10][10];
+
+const unsigned char rzygon_sinus_right[] = {
+    176, 176, 176, 176, 176, 175, 175, 175, 175, 174,
+    174, 173, 173, 172, 172, 171, 171, 170, 169, 168,
+    168, 167, 166, 165, 164, 163, 162, 161, 160, 159,
+    158, 157, 156, 154, 153, 152, 151, 149, 148, 147,
+    145, 144, 142, 141, 139, 138, 137, 135, 134, 132,
+    130, 129, 127, 126, 124, 123, 121, 120, 118, 116,
+    115, 113, 112, 110, 109, 107, 106, 104, 102, 101,
+     99,  98,  97,  95,  94,  92,  91,  89,  88,  87,
+     85,  84,  83,  82,  80,  79,  78,  77,  76,  75,
+     74,  73,  72,  71,  70,  69,  68,  68,  67,  66,
+     65,  65,  64,  64,  63,  63,  62,  62,  61,  61,
+     61,  61,  60,  60,  60,  60,  60 
+};
+
+void setup_pmg()
+{
+    unsigned char i;
+
+    POKE(SDMCTL,
+         DMACTL_ENABLE_PLAYER_DMA |
+             DMACTL_ENABLE_MISSLE_DMA |
+             DMACTL_NORMAL_PLAYFIELD |
+             DMACTL_DMA_FETCH_INSTRUCTION);
+    POKE(PMBASE, pmg_memory / 256);
+
+    memset(pmg_memory_ptr, 0, 1024);
+
+    POKE(GRACTL, PMG_PLAYERS | PMG_MISSILES);
+    POKE(GPRIOR, 1);
+
+    // Set the sprite colors
+    POKE(PCOLR0, 0xee);
+    POKE(PCOLR1, 0xae);
+    POKE(PCOLR2, 0x7e);
+    POKE(PCOLR3, 0x3e);
+    POKE(SIZEP0, SIZEP_QUAD);
+    POKE(SIZEP1, SIZEP_QUAD);
+    POKE(SIZEP2, SIZEP_QUAD);
+    POKE(SIZEP3, SIZEP_SINGLE);
+    POKE(HPOSP0, 100);
+    POKE(HPOSP1, 0);
+    POKE(HPOSP2, 0);
+
+    for (i = 0; i < 255; ++i)
+    {
+        pmg_memory_P0[i] = 0xaa;
+        pmg_memory_P1[i] = 0xaa;
+        pmg_memory_P2[i] = 0xaa;
+    }
+}
+
+unsigned int current_timestamp()
+{
+    return (PEEK(18) * 65536 + PEEK(19) * 256 + PEEK(20)) / 60;
+}
+
+void read_incoming_transaction()
+{
+    unsigned int current_time = current_timestamp();
+    unsigned int diff = current_time - last_check_timestamp;
+    FILE *file;
+
+    if (diff > 5)
+    {
+        last_check_timestamp = current_time;
+        file = fopen(input_file, "r");
+        if (file == NULL)
+        {
+            tx_buffer[0] = 0;
+            return;
+        }
+
+        if (fgets(tx_buffer, 256, file) == NULL)
+        {
+            tx_buffer[0] = 0;
+            fclose(file);
+            return;
+        }
+
+        fclose(file);
+
+        // Remove the file
+        if (remove(input_file) != 0)
+        {
+            tx_buffer[0] = 0;
+            printf("TxPool broken\n");
+        }
+    }
+    else
+    {
+        tx_buffer[0] = 0;
+    }
+}
+
 extern void draw_box(unsigned char x, unsigned char y, unsigned char width, unsigned char height);
 
 int main(void) {
@@ -61,6 +170,8 @@ int main(void) {
     int current_selection = 0;
     const int num_menu_options = 3;
 	unsigned char keypress;
+
+    setup_pmg();
 
 program_start:
     current_selection = 0;

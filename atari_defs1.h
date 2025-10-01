@@ -62,3 +62,10 @@
 #define SIZEP_SINGLE 0
 #define SIZEP_DOUBLE 1
 #define SIZEP_QUAD 3
+#ifndef WSYNC
+#define WSYNC	 0xD40A		
+#endif
+
+#ifndef VCOUNT
+#define VCOUNT	 0xD40B		
+#endif

@@ -73,12 +73,13 @@ const unsigned char rzygon_sinus_right[] = {
     145, 144, 142, 141, 139, 138, 137, 135, 134, 132,
     130, 129, 127, 126, 124, 123, 121, 120, 118, 116,
     115, 113, 112, 110, 109, 107, 106, 104, 102, 101,
-     99,  98,  97,  95,  94,  92,  91,  89,  88,  87,
-     85,  84,  83,  82,  80,  79,  78,  77,  76,  75,
-     74,  73,  72,  71,  70,  69,  68,  68,  67,  66,
-     65,  65,  64,  64,  63,  63,  62,  62,  61,  61,
-     61,  61,  60,  60,  60,  60,  60 
-};
+    99, 98, 97, 95, 94, 92, 91, 89, 88, 87,
+    85, 84, 83, 82, 80, 79, 78, 77, 76, 75,
+    74, 73, 72, 71, 70, 69, 68, 68, 67, 66,
+    65, 65, 64, 64, 63, 63, 62, 62, 61, 61,
+    61, 61, 60, 60, 60, 60, 60};
+
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 void setup_pmg()
 {
@@ -101,9 +102,9 @@ void setup_pmg()
     POKE(PCOLR1, 0xae);
     POKE(PCOLR2, 0x7e);
     POKE(PCOLR3, 0x3e);
-    POKE(SIZEP0, SIZEP_QUAD);
-    POKE(SIZEP1, SIZEP_QUAD);
-    POKE(SIZEP2, SIZEP_QUAD);
+    POKE(SIZEP0, SIZEP_DOUBLE);
+    POKE(SIZEP1, SIZEP_DOUBLE);
+    POKE(SIZEP2, SIZEP_DOUBLE);
     POKE(SIZEP3, SIZEP_SINGLE);
     POKE(HPOSP0, 100);
     POKE(HPOSP1, 0);
@@ -111,10 +112,35 @@ void setup_pmg()
 
     for (i = 0; i < 255; ++i)
     {
-        pmg_memory_P0[i] = 0xaa;
-        pmg_memory_P1[i] = 0xaa;
-        pmg_memory_P2[i] = 0xaa;
+        pmg_memory_P0[i] = 0x0;
+        pmg_memory_P1[i] = 0x0;
+        pmg_memory_P2[i] = 0x0;
     }
+
+    // $08, $7e, $88, $88, $7e, $09, $09, $09, $7e, $08, $08
+    pmg_memory_P0[10] = 0x08;
+    pmg_memory_P0[11] = 0x7e;
+    pmg_memory_P0[12] = 0x88;
+    pmg_memory_P0[13] = 0x88;
+    pmg_memory_P0[14] = 0x7e;
+    pmg_memory_P0[15] = 0x09;
+    pmg_memory_P0[16] = 0x09;
+    pmg_memory_P0[17] = 0x09;
+    pmg_memory_P0[18] = 0x7e;
+    pmg_memory_P0[19] = 0x08;
+    pmg_memory_P0[20] = 0x08;
+
+    pmg_memory_P1[16] = 0xc3;
+    pmg_memory_P1[17] = 0xc3;
+    pmg_memory_P1[18] = 0x66;
+    pmg_memory_P1[19] = 0x66;
+    pmg_memory_P1[20] = 0x3c;
+    pmg_memory_P1[21] = 0x18;
+    pmg_memory_P1[22] = 0x7e;
+    pmg_memory_P1[23] = 0x18;
+    pmg_memory_P1[24] = 0x7e;
+    pmg_memory_P1[25] = 0x18;
+    pmg_memory_P1[26] = 0x18;
 }
 
 unsigned int current_timestamp()
@@ -214,6 +240,106 @@ void query()
     printf("  TOTAL: %i\n", balance);
 }
 
+void synchro(int rep)
+{
+    unsigned char vcount;
+    while (rep--)
+    {
+        for (;;)
+        {
+            vcount = PEEK(VCOUNT);
+            if (vcount == 0x90)
+            {
+                break;
+            }
+        }
+    }
+}
+
+void cprintf_inverted(const char *str) {
+    unsigned int i = 0;
+    for (; i < strlen(str); i++) {
+        char c = str[i];
+        if (c != '\n') {
+            c = c | 0x80; 
+        }
+
+        cputc(c);
+    }
+    
+    cputc('\n');
+}
+void logo_animation()
+{
+    unsigned int color = 0;
+    unsigned int i;
+    bgcolor(COLOR_BLACK);
+    cprintf("\n\n\n\n");
+    cprintf_inverted("Initializing modern computer system...\n");
+    for (i = 0; i < ARRAY_SIZE(rzygon_sinus_right); i++)
+    {
+        // Access the element using its index
+        unsigned char value = rzygon_sinus_right[i];
+
+        POKE(HPOSP0, value);
+        POKE(HPOSP1, 230-value);
+        synchro(1);
+
+        POKE(PCOLR0, color);
+        POKE(PCOLR1, 255-color);
+        color++;
+
+        if (i == 35) {
+            cprintf("Compiling shaders...\n\r\n\r");
+        }
+        if (i == 77) {
+            cprintf("Synchronizing timezones...\n\r\n\r");
+        }
+        if (i == 99) {
+            cprintf("Training neural network...\n\r\n\r");
+        }
+    }
+
+    for (i = ARRAY_SIZE(rzygon_sinus_right) - 1; i < ARRAY_SIZE(rzygon_sinus_right); i--) // Note: i < array_length is a common trick for unsigned types
+    {
+        // Access the element using its index
+        unsigned char value = rzygon_sinus_right[i];
+
+        POKE(HPOSP0, value);
+        POKE(HPOSP1, 230-value);
+
+        synchro(1);
+        if (i == 0)
+        {
+            break; // Stop when the index reaches 0 after processing element 0
+        }
+
+        POKE(PCOLR0, color);
+        POKE(PCOLR1, 255-color);
+        color--;
+
+        if (i == 35) {
+            cprintf("Warming flux capacitor...\n\r\n\r");
+        }
+        if (i == 77) {
+            cprintf("Reticulating splines...\n\r\n\r");
+        }
+        if (i == 99) {
+            cprintf("Bootstrapping bootstrap...\n\r\n\r");
+        }
+    }
+
+    POKE(PCOLR0, 0xbb);
+    POKE(PCOLR1, 0x74);
+
+    cprintf("Aligning satellite dish...");
+    synchro(100);
+    cprintf("DONE!");
+
+    cgetc();
+    synchro(50);
+}
+
 int main(void)
 {
     char password[MAX_PASSWORD_LEN + 1];
@@ -225,6 +351,8 @@ int main(void)
     unsigned char keypress;
 
     setup_pmg();
+
+    logo_animation();
 
 program_start:
     current_selection = 0;

@@ -13,8 +13,8 @@
 #define PROGRESS_BAR_X_START ((SCREEN_WIDTH - (PROGRESS_BAR_WIDTH + 2)) / 2)
 #define PROGRESS_BAR_X_END (PROGRESS_BAR_X_START + PROGRESS_BAR_WIDTH + 1)
 
-
-void play_animation(void) {
+void play_animation(void)
+{
     unsigned char i;
     unsigned int j;
     char spinner[] = {'/', '-', '\\', '|'};
@@ -25,20 +25,29 @@ void play_animation(void) {
     gotoxy(LOADING_TEXT_X, LOADING_TEXT_Y);
     cprintf("Loading...");
 
+    for (i=0; i < PROGRESS_BAR_WIDTH; ++i)
+    {
+        gotoxy(PROGRESS_BAR_X_START + 1+i, PROGRESS_BAR_Y);
+        cputc('.');
+    }
+
     gotoxy(PROGRESS_BAR_X_START, PROGRESS_BAR_Y);
     cputc('[');
     gotoxy(PROGRESS_BAR_X_END, PROGRESS_BAR_Y);
     cputc(']');
 
-    for (i = 0; i < PROGRESS_BAR_WIDTH; ++i) {
+    for (i = 0; i < PROGRESS_BAR_WIDTH; ++i)
+    {
         gotoxy(SPINNER_X, SPINNER_Y);
         cputc(spinner[i % 4]);
 
         gotoxy(PROGRESS_BAR_X_START + 1 + i, PROGRESS_BAR_Y);
-        cputc('=');
+        cputc(0x14);
 
-        for (j = 0; j < 500; ++j);
+        for (j = 0; j < 500; ++j)
+            ;
     }
-    
-    for (j = 0; j < 2000; ++j);
+
+    for (j = 0; j < 2000; ++j)
+        ;
 }
